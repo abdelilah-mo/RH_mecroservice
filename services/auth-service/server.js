@@ -167,11 +167,13 @@ app.post('/auth/login', async (req, res) => {
 
 async function startServer() {
   try {
-    await mongoose.connect(process.env.MONGO_URI);
+    const mongoUri = process.env.AUTH_MONGO_URI || process.env.MONGO_URI;
+    await mongoose.connect(mongoUri);
 
     const PORT = process.env.AUTH_PORT || 3001;
     app.listen(PORT, () => {
       console.log(`\n Auth Service    -> http://localhost:${PORT}`);
+      console.log(`   MongoDB       -> ${mongoUri}`);
       console.log('   POST /auth/register  (inscription)');
       console.log('   POST /auth/login     (connexion)\n');
     });
