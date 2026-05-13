@@ -193,7 +193,7 @@ app.delete('/departments/:id', verifyToken, async (req, res) => {
 
 async function startServer() {
   try {
-    const mongoUri = process.env.DEPARTMENTS_MONGO_URI || process.env.MONGO_URI;
+    const mongoUri = process.env.DEPARTMENTS_MONGO_URI ;
     await mongoose.connect(mongoUri);
 
     const PORT = process.env.DEPARTMENTS_PORT || 3003;
