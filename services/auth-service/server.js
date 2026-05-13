@@ -27,6 +27,12 @@ app.use((req, res, next) => {
 
 const userSchema = new mongoose.Schema(
   {
+    username: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true
+    },
     email: {
       type: String,
       required: true,
@@ -47,13 +53,35 @@ const userSchema = new mongoose.Schema(
 
 const User = mongoose.model('User', userSchema);
 
+function buildUsernameFromEmail(email) {
+  return email.split('@')[0].replace(/[^a-zA-Z0-9_-]/g, '') || 'user';
+}
+
+async function generateUniqueUsername(baseUsername, excludeUserId = null) {
+  const normalizedBase = baseUsername.trim();
+  let candidate = normalizedBase;
+  let counter = 1;
+
+  while (true) {
+    const existingUser = await User.findOne({ username: candidate });
+
+    if (!existingUser || existingUser._id.toString() === excludeUserId) {
+      return candidate;
+    }
+
+    candidate = `${normalizedBase}${counter}`;
+    counter += 1;
+  }
+}
+
 app.post('/auth/register', async (req, res) => {
   try {
+    const username = req.body.username?.trim();
     const email = req.body.email?.trim().toLowerCase();
     const { password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email et mot de passe requis' });
+    if (!username || !email || !password) {
+      return res.status(400).json({ error: 'Username, email et mot de passe requis' });
     }
 
     const existingUser = await User.findOne({ email });
@@ -62,9 +90,16 @@ app.post('/auth/register', async (req, res) => {
       return res.status(400).json({ error: 'Email deja utilise' });
     }
 
+    const existingUsername = await User.findOne({ username });
+
+    if (existingUsername) {
+      return res.status(400).json({ error: 'Username deja utilise' });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = await User.create({
+      username,
       email,
       password: hashedPassword
     });
@@ -72,6 +107,10 @@ app.post('/auth/register', async (req, res) => {
     res.status(201).json({ message: 'Utilisateur cree', id: newUser._id });
   } catch (error) {
     if (error.code === 11000) {
+      if (error.keyPattern?.username) {
+        return res.status(400).json({ error: 'Username deja utilise' });
+      }
+
       return res.status(400).json({ error: 'Email deja utilise' });
     }
 
@@ -97,8 +136,19 @@ app.post('/auth/login', async (req, res) => {
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
     }
 
+    if (!user.username) {
+      user.username = await generateUniqueUsername(
+        buildUsernameFromEmail(user.email),
+        user._id.toString()
+      );
+      await user.save();
+    }
+
     const token = jwt.sign(
-      { userId: user._id.toString() },
+      {
+        userId: user._id.toString(),
+        username: user.username
+      },
       process.env.SECRET_KEY,
       { expiresIn: '24h' }
     );
@@ -106,7 +156,8 @@ app.post('/auth/login', async (req, res) => {
     res.json({
       message: 'Connexion reussie',
       token,
-      userId: user._id
+      userId: user._id,
+      username: user.username
     });
   } catch (error) {
     console.error('Erreur login:', error);

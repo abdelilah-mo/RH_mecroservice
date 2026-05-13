@@ -63,6 +63,7 @@ function verifyToken(req, res, next) {
   try {
     const decoded = jwt.verify(token, process.env.SECRET_KEY);
     req.userId = decoded.userId;
+    req.username = decoded.username || decoded.userId;
     next();
   } catch (error) {
     return res.status(403).json({ error: 'Token invalide' });
@@ -114,7 +115,7 @@ app.post('/departments', verifyToken, async (req, res) => {
     const department = await Department.create({
       nom,
       description,
-      createdBy: req.userId
+      createdBy: req.username
     });
 
     res.status(201).json({
