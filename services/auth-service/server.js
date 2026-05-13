@@ -165,6 +165,7 @@ app.post('/auth/login', async (req, res) => {
   }
 });
 
+
 async function startServer() {
   try {
     const mongoUri = process.env.AUTH_MONGO_URI ;
