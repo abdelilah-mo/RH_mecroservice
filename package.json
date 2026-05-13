@@ -1,0 +1,31 @@
+{
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "concurrently": "^9.2.1",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.6.2",
+    "nodemon": "^3.1.14"
+  },
+  "name": "cloudapirest",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node api.js",
+    "dev": "nodemon api.js",
+    "start:auth": "node services/auth-service/server.js",
+    "start:departments": "node services/department-service/server.js",
+    "start:all": "concurrently \"npm run start\" \"npm run start:auth\" \"npm run start:departments\"",
+    "dev:auth": "nodemon services/auth-service/server.js",
+    "dev:departments": "nodemon services/department-service/server.js",
+    "dev:all": "concurrently \"npm run dev\" \"npm run dev:auth\" \"npm run dev:departments\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}

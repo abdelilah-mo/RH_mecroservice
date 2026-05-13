@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Departements</title>
+    <style>
+        :root {
+            --bg: #f4efe6;
+            --panel: rgba(255, 252, 245, 0.92);
+            --ink: #1d1b18;
+            --muted: #6d665c;
+            --line: #d8ccba;
+            --accent: #1f6f5f;
+            --accent-dark: #184f45;
+            --danger: #9c3d2d;
+            --shadow: 0 24px 60px rgba(44, 37, 28, 0.12);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            min-height: 100vh;
+            font-family: Georgia, "Times New Roman", serif;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at top left, rgba(31, 111, 95, 0.18), transparent 30%),
+                radial-gradient(circle at top right, rgba(196, 139, 75, 0.20), transparent 26%),
+                linear-gradient(160deg, #f8f4ec 0%, #efe6d8 45%, #f6f1e7 100%);
+        }
+
+        .shell {
+            width: min(1180px, calc(100% - 32px));
+            margin: 24px auto;
+        }
+
+        .navbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 18px 22px;
+            border: 1px solid rgba(29, 27, 24, 0.1);
+            border-radius: 24px;
+            background: rgba(255, 250, 242, 0.76);
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow);
+        }
+
+        .brand h1 {
+            font-size: 28px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .brand p {
+            color: var(--muted);
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .nav-pill {
+            border: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.7);
+            color: var(--ink);
+            padding: 10px 16px;
+            border-radius: 999px;
+            font-size: 14px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .nav-pill.active {
+            background: var(--ink);
+            color: #fff;
+            border-color: var(--ink);
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 22px;
+            margin-top: 22px;
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid rgba(29, 27, 24, 0.08);
+            border-radius: 28px;
+            box-shadow: var(--shadow);
+        }
+
+        .auth-panel,
+        .content-panel {
+            padding: 28px;
+        }
+
+        .panel-title {
+            font-size: 26px;
+            margin-bottom: 10px;
+        }
+
+        .panel-copy {
+            color: var(--muted);
+            line-height: 1.5;
+            margin-bottom: 22px;
+        }
+
+        .message {
+            display: none;
+            margin-bottom: 18px;
+            padding: 14px 16px;
+            border-radius: 16px;
+            font-size: 14px;
+            border: 1px solid transparent;
+        }
+
+        .message.show { display: block; }
+        .message.success { background: rgba(31, 111, 95, 0.12); border-color: rgba(31, 111, 95, 0.28); color: var(--accent-dark); }
+        .message.error { background: rgba(156, 61, 45, 0.10); border-color: rgba(156, 61, 45, 0.28); color: var(--danger); }
+        .message.info { background: rgba(29, 27, 24, 0.06); border-color: rgba(29, 27, 24, 0.12); color: var(--ink); }
+
+        .field {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            border: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 16px;
+            padding: 13px 14px;
+            font-size: 15px;
+            color: var(--ink);
+            font-family: inherit;
+        }
+
+        textarea {
+            min-height: 110px;
+            resize: vertical;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            border: none;
+            border-radius: 16px;
+            padding: 13px 18px;
+            font-size: 14px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: transform 0.15s ease, opacity 0.15s ease, background 0.15s ease;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .btn-secondary {
+            background: rgba(29, 27, 24, 0.08);
+            color: var(--ink);
+        }
+
+        .btn-danger {
+            background: rgba(156, 61, 45, 0.12);
+            color: var(--danger);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid var(--line);
+            color: var(--ink);
+        }
+
+        .stack {
+            display: grid;
+            gap: 20px;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+            margin-bottom: 22px;
+        }
+
+        .summary-card {
+            padding: 18px;
+            border-radius: 22px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(248,241,231,0.96));
+            border: 1px solid rgba(29, 27, 24, 0.08);
+        }
+
+        .summary-card span {
+            color: var(--muted);
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .summary-card strong {
+            display: block;
+            margin-top: 10px;
+            font-size: 28px;
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+
+        .toolbar h2 {
+            font-size: 24px;
+        }
+
+        .toolbar p {
+            color: var(--muted);
+            margin-top: 6px;
+        }
+
+        .table-wrap {
+            overflow: auto;
+            border-radius: 22px;
+            border: 1px solid rgba(29, 27, 24, 0.08);
+            background: rgba(255, 255, 255, 0.72);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 720px;
+        }
+
+        th,
+        td {
+            padding: 16px 18px;
+            border-bottom: 1px solid rgba(29, 27, 24, 0.08);
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            font-size: 12px;
+            color: var(--muted);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            background: rgba(246, 239, 226, 0.82);
+        }
+
+        tbody tr:hover {
+            background: rgba(255, 248, 238, 0.95);
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .actions button {
+            padding: 10px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 960px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 720px) {
+            .shell {
+                width: min(100% - 20px, 1180px);
+                margin: 12px auto 20px;
+            }
+
+            .navbar,
+            .auth-panel,
+            .content-panel {
+                padding: 20px;
+            }
+
+            .summary {
+                grid-template-columns: 1fr;
+            }
+
+            .brand h1 {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="shell">
+        <nav class="navbar">
+            <div class="brand">
+                <h1>Departement</h1>
+                <p>Gestion simple des departements avec Auth + MongoDB</p>
+            </div>
+            <div class="nav-links">
+                <span class="nav-pill active">Authentification</span>
+                <span class="nav-pill" id="departmentsPill">Departement</span>
+            </div>
+        </nav>
+
+        <div class="layout">
+            <aside class="panel auth-panel">
+                <h2 class="panel-title">Connexion</h2>
+                <p class="panel-copy">Creer un compte ou connecte-toi pour afficher, ajouter, modifier et supprimer les departements.</p>
+
+                <div class="message" id="message"></div>
+
+                <div class="field">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" placeholder="admin@company.com">
+                </div>
+
+                <div class="field">
+                    <label for="password">Mot de passe</label>
+                    <input type="password" id="password" placeholder="********">
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn-primary" onclick="login()">Se connecter</button>
+                    <button class="btn-secondary" onclick="register()">Creer un compte</button>
+                </div>
+
+                <div class="stack" style="margin-top: 22px;">
+                    <div class="summary-card">
+                        <span>Etat</span>
+                        <strong id="authState">Hors ligne</strong>
+                    </div>
+                    <div class="summary-card">
+                        <span>Utilisateur</span>
+                        <strong id="currentUser">Aucun</strong>
+                    </div>
+                </div>
+            </aside>
+
+            <main class="panel content-panel">
+                <div class="toolbar">
+                    <div>
+                        <h2>Table des departements</h2>
+                        <p>Ajoute, modifie ou supprime les departements depuis une seule interface.</p>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn-ghost" onclick="refreshDepartments()">Actualiser</button>
+                        <button class="btn-danger" onclick="logout()">Deconnexion</button>
+                    </div>
+                </div>
+
+                <div class="summary">
+                    <div class="summary-card">
+                        <span>Total</span>
+                        <strong id="departmentCount">0</strong>
+                    </div>
+                    <div class="summary-card">
+                        <span>Service</span>
+                        <strong>MongoDB</strong>
+                    </div>
+                    <div class="summary-card">
+                        <span>Mode</span>
+                        <strong>CRUD</strong>
+                    </div>
+                </div>
+
+                <section class="panel" style="padding: 22px; margin-bottom: 22px;">
+                    <h3 style="font-size: 22px; margin-bottom: 10px;">Ajouter ou modifier un departement</h3>
+                    <p class="panel-copy" style="margin-bottom: 18px;">Remplis le formulaire puis valide pour creer un nouveau departement ou mettre a jour un existant.</p>
+
+                    <input type="hidden" id="departmentId">
+
+                    <div class="field">
+                        <label for="departmentName">Nom du departement</label>
+                        <input type="text" id="departmentName" placeholder="Ressources humaines">
+                    </div>
+
+                    <div class="field">
+                        <label for="departmentDescription">Description</label>
+                        <textarea id="departmentDescription" placeholder="Gestion des collaborateurs, recrutement, paie..."></textarea>
+                    </div>
+
+                    <div class="btn-row">
+                        <button class="btn-primary" onclick="saveDepartment()">Enregistrer</button>
+                        <button class="btn-secondary" onclick="resetDepartmentForm()">Vider</button>
+                    </div>
+                </section>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nom</th>
+                                <th>Description</th>
+                                <th>Cree par</th>
+                                <th>Creation</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="departmentTableBody">
+                            <tr>
+                                <td colspan="5" class="muted">Connecte-toi pour charger les departements.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        const AUTH_URL = 'http://localhost:3001';
+        const DEPARTMENTS_URL = 'http://localhost:3003';
+
+        let token = null;
+        let userId = null;
+        let departments = [];
+
+        function showMessage(text, type) {
+            const div = document.getElementById('message');
+            div.textContent = text;
+            div.className = `message ${type} show`;
+            clearTimeout(showMessage.timer);
+            showMessage.timer = setTimeout(() => div.classList.remove('show'), 5000);
+        }
+
+        function updateAuthState(email = null) {
+            document.getElementById('authState').textContent = token ? 'Connecte' : 'Hors ligne';
+            document.getElementById('currentUser').textContent = email || 'Aucun';
+            document.getElementById('departmentsPill').classList.toggle('active', Boolean(token));
+        }
+
+        function resetDepartmentForm() {
+            document.getElementById('departmentId').value = '';
+            document.getElementById('departmentName').value = '';
+            document.getElementById('departmentDescription').value = '';
+        }
+
+        async function register() {
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                showMessage('Remplis email et mot de passe.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${AUTH_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    showMessage(data.error || 'Erreur pendant l inscription.', 'error');
+                    return;
+                }
+
+                showMessage('Compte cree, tu peux maintenant te connecter.', 'success');
+            } catch (error) {
+                showMessage('Auth service inaccessible.', 'error');
+            }
+        }
+
+        async function login() {
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                showMessage('Remplis email et mot de passe.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${AUTH_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    showMessage(data.error || 'Connexion impossible.', 'error');
+                    return;
+                }
+
+                token = data.token;
+                userId = data.userId;
+                updateAuthState(email);
+                showMessage('Connexion reussie.', 'success');
+                refreshDepartments();
+            } catch (error) {
+                showMessage('Impossible de contacter auth-service.', 'error');
+            }
+        }
+
+        async function refreshDepartments() {
+            if (!token) {
+                showMessage('Connecte-toi d abord.', 'info');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${DEPARTMENTS_URL}/departments`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    showMessage(data.error || 'Chargement impossible.', 'error');
+                    return;
+                }
+
+                departments = data.departments || [];
+                renderDepartments();
+            } catch (error) {
+                showMessage('Impossible de contacter department-service.', 'error');
+            }
+        }
+
+        function renderDepartments() {
+            const tbody = document.getElementById('departmentTableBody');
+            document.getElementById('departmentCount').textContent = departments.length;
+
+            if (!departments.length) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="muted">Aucun departement disponible. Ajoute le premier.</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = departments.map((department) => `
+                <tr>
+                    <td><strong>${escapeHtml(department.nom)}</strong></td>
+                    <td>${escapeHtml(department.description || '-')}</td>
+                    <td>${escapeHtml(department.createdBy || '-')}</td>
+                    <td>${formatDate(department.createdAt)}</td>
+                    <td>
+                        <div class="actions">
+                            <button class="btn-secondary" onclick="editDepartment('${department._id}')">Modifier</button>
+                            <button class="btn-danger" onclick="deleteDepartment('${department._id}')">Supprimer</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function saveDepartment() {
+            if (!token) {
+                showMessage('Connecte-toi d abord.', 'info');
+                return;
+            }
+
+            const departmentId = document.getElementById('departmentId').value;
+            const nom = document.getElementById('departmentName').value.trim();
+            const description = document.getElementById('departmentDescription').value.trim();
+
+            if (!nom) {
+                showMessage('Le nom du departement est obligatoire.', 'error');
+                return;
+            }
+
+            const url = departmentId
+                ? `${DEPARTMENTS_URL}/departments/${departmentId}`
+                : `${DEPARTMENTS_URL}/departments`;
+
+            const method = departmentId ? 'PATCH' : 'POST';
+
+            try {
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ nom, description })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    showMessage(data.error || 'Operation impossible.', 'error');
+                    return;
+                }
+
+                showMessage(data.message || 'Operation reussie.', 'success');
+                resetDepartmentForm();
+                refreshDepartments();
+            } catch (error) {
+                showMessage('Erreur pendant l enregistrement.', 'error');
+            }
+        }
+
+        function editDepartment(id) {
+            const department = departments.find((item) => item._id === id);
+
+            if (!department) {
+                showMessage('Departement introuvable.', 'error');
+                return;
+            }
+
+            document.getElementById('departmentId').value = department._id;
+            document.getElementById('departmentName').value = department.nom || '';
+            document.getElementById('departmentDescription').value = department.description || '';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function deleteDepartment(id) {
+            if (!token) {
+                showMessage('Connecte-toi d abord.', 'info');
+                return;
+            }
+
+            if (!confirm('Supprimer ce departement ?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${DEPARTMENTS_URL}/departments/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    showMessage(data.error || 'Suppression impossible.', 'error');
+                    return;
+                }
+
+                showMessage(data.message || 'Departement supprime.', 'success');
+                refreshDepartments();
+            } catch (error) {
+                showMessage('Erreur pendant la suppression.', 'error');
+            }
+        }
+
+        function logout() {
+            token = null;
+            userId = null;
+            departments = [];
+            updateAuthState();
+            resetDepartmentForm();
+            document.getElementById('departmentCount').textContent = '0';
+            document.getElementById('departmentTableBody').innerHTML = `
+                <tr>
+                    <td colspan="5" class="muted">Connecte-toi pour charger les departements.</td>
+                </tr>
+            `;
+            showMessage('Deconnexion effectuee.', 'info');
+        }
+
+        function formatDate(value) {
+            if (!value) {
+                return '-';
+            }
+
+            return new Date(value).toLocaleString('fr-FR');
+        }
+
+        function escapeHtml(value) {
+            return String(value)
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;');
+        }
+    </script>
+</body>
+</html>
