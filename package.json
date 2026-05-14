@@ -23,14 +23,16 @@
     "start:employees": "node services/employee-service/server.js",
     "start:catalogues": "node services/catalogue-service/server.js",
     "start:affectations": "node services/affectation-service/server.js",
-    "start:all": "concurrently \"npm run start\" \"npm run start:auth\" \"npm run start:departments\" \"npm run start:positions\" \"npm run start:employees\" \"npm run start:catalogues\" \"npm run start:affectations\"",
+    "start:reclamations": "node services/reclamation-service/server.js",
+    "start:all": "concurrently \"npm run start\" \"npm run start:auth\" \"npm run start:departments\" \"npm run start:positions\" \"npm run start:employees\" \"npm run start:catalogues\" \"npm run start:affectations\" \"npm run start:reclamations\"",
     "dev:auth": "nodemon services/auth-service/server.js",
     "dev:departments": "nodemon services/department-service/server.js",
     "dev:positions": "nodemon services/position-service/server.js",
     "dev:employees": "nodemon services/employee-service/server.js",
     "dev:catalogues": "nodemon services/catalogue-service/server.js",
     "dev:affectations": "nodemon services/affectation-service/server.js",
-    "dev:all": "concurrently \"npm run dev\" \"npm run dev:auth\" \"npm run dev:departments\" \"npm run dev:positions\" \"npm run dev:employees\" \"npm run dev:catalogues\" \"npm run dev:affectations\""
+    "dev:reclamations": "nodemon services/reclamation-service/server.js",
+    "dev:all": "concurrently \"npm run dev\" \"npm run dev:auth\" \"npm run dev:departments\" \"npm run dev:positions\" \"npm run dev:employees\" \"npm run dev:catalogues\" \"npm run dev:affectations\" \"npm run dev:reclamations\""
   },
   "keywords": [],
   "author": "",

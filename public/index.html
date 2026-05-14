@@ -451,8 +451,8 @@
             <a class="menu-link" data-section="employees" onclick="showSection('employees', this)">Employees</a>
             <a class="menu-link" data-section="catalogues" onclick="showSection('catalogues', this)">Catalogues</a>
             <a class="menu-link" data-section="affectations" onclick="showSection('affectations', this)">Affectations</a>
-            <a onclick="loadAllData()">Refresh all</a>
-            <a onclick="logout()">Logout</a>
+            <a class="menu-link" data-section="reclamations" onclick="showSection('reclamations', this)">Reclamations</a>
+            
         </div>
     </div>
 
@@ -495,6 +495,11 @@
             <div class="card">
                 <h3>Affectations</h3>
                 <p id="totalAffectations">0</p>
+            </div>
+
+            <div class="card">
+                <h3>Reclamations</h3>
+                <p id="totalReclamations">0</p>
             </div>
         </div>
 
@@ -667,6 +672,55 @@
                 </div>
             </div>
         </div>
+
+        <div id="reclamationsSection" class="section">
+            <div class="content-grid">
+                <div class="panel">
+                    <h3 id="reclamationFormTitle">Add Reclamation</h3>
+                    <p>Create a reclamation and track priority and status.</p>
+                    <input type="hidden" id="reclamationId">
+
+                    <div class="form-group">
+                        <label>Sujet</label>
+                        <input type="text" id="reclamationSujet" placeholder="Probleme de paie">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="reclamationDescription" rows="5" placeholder="Explique la reclamation..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Statut</label>
+                        <select id="reclamationStatut">
+                            <option value="ouverte">ouverte</option>
+                            <option value="en cours">en cours</option>
+                            <option value="resolue">resolue</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Priorite</label>
+                        <select id="reclamationPriorite">
+                            <option value="basse">basse</option>
+                            <option value="moyenne" selected>moyenne</option>
+                            <option value="haute">haute</option>
+                        </select>
+                    </div>
+
+                    <div class="panel-actions">
+                        <button class="btn" onclick="saveReclamation()">Save</button>
+                        <button class="btn btn-secondary" onclick="resetReclamationForm()">Reset</button>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3>Reclamation List</h3>
+                    <p>All reclamations stored in the reclamation service.</p>
+                    <div id="reclamationsContainer"></div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -677,6 +731,7 @@
     const EMPLOYEES_URL = 'http://localhost:3005';
     const CATALOGUES_URL = 'http://localhost:3006';
     const AFFECTATIONS_URL = 'http://localhost:3007';
+    const RECLAMATIONS_URL = 'http://localhost:3008';
 
     const loginTab = document.getElementById("loginTab");
     const registerTab = document.getElementById("registerTab");
@@ -692,7 +747,8 @@
         positions: [],
         employees: [],
         catalogues: [],
-        affectations: []
+        affectations: [],
+        reclamations: []
     };
 
     loginTab.onclick = () => {
@@ -738,7 +794,8 @@
             positions: 'Positions',
             employees: 'Employees',
             catalogues: 'Catalogues',
-            affectations: 'Affectations'
+            affectations: 'Affectations',
+            reclamations: 'Reclamations'
         };
 
         document.getElementById('pageTitle').innerText = labels[sectionName];
@@ -819,12 +876,13 @@
         }
 
         try {
-            const [departmentsData, positionsData, employeesData, cataloguesData, affectationsData] = await Promise.all([
+            const [departmentsData, positionsData, employeesData, cataloguesData, affectationsData, reclamationsData] = await Promise.all([
                 apiRequest(`${DEPARTMENTS_URL}/departments`, { headers: getAuthHeaders() }),
                 apiRequest(`${POSITIONS_URL}/positions`, { headers: getAuthHeaders() }),
                 apiRequest(`${EMPLOYEES_URL}/employees`, { headers: getAuthHeaders() }),
                 apiRequest(`${CATALOGUES_URL}/catalogues`, { headers: getAuthHeaders() }),
-                apiRequest(`${AFFECTATIONS_URL}/affectations`, { headers: getAuthHeaders() })
+                apiRequest(`${AFFECTATIONS_URL}/affectations`, { headers: getAuthHeaders() }),
+                apiRequest(`${RECLAMATIONS_URL}/reclamations`, { headers: getAuthHeaders() })
             ]);
 
             state.departments = departmentsData.departments || [];
@@ -832,6 +890,7 @@
             state.employees = employeesData.employees || [];
             state.catalogues = cataloguesData.catalogues || [];
             state.affectations = affectationsData.affectations || [];
+            state.reclamations = reclamationsData.reclamations || [];
 
             renderCounts();
             renderDepartmentTable();
@@ -839,6 +898,7 @@
             renderEmployeeTable();
             renderCatalogueTable();
             renderAffectationTable();
+            renderReclamationTable();
             renderSelectOptions();
         } catch (error) {
             showMessage('dashboardMessage', error.message, 'error');
@@ -851,6 +911,7 @@
         document.getElementById('totalEmployees').innerText = state.employees.length;
         document.getElementById('totalCatalogues').innerText = state.catalogues.length;
         document.getElementById('totalAffectations').innerText = state.affectations.length;
+        document.getElementById('totalReclamations').innerText = state.reclamations.length;
     }
 
     function renderTable(containerId, headers, rowsHtml) {
@@ -972,6 +1033,28 @@
                         <div class="table-actions">
                             <button class="edit" onclick="editAffectation('${affectation._id}')">Edit</button>
                             <button class="delete" onclick="deleteAffectation('${affectation._id}')">Delete</button>
+                        </div>
+                    </td>
+                </tr>
+            `)
+        );
+    }
+
+    function renderReclamationTable() {
+        renderTable(
+            'reclamationsContainer',
+            ['Sujet', 'Description', 'Statut', 'Priorite', 'Created By', 'Actions'],
+            state.reclamations.map((reclamation) => `
+                <tr>
+                    <td><strong>${escapeHtml(reclamation.sujet)}</strong></td>
+                    <td>${escapeHtml(reclamation.description || '-')}</td>
+                    <td>${escapeHtml(reclamation.statut || '-')}</td>
+                    <td>${escapeHtml(reclamation.priorite || '-')}</td>
+                    <td>${escapeHtml(reclamation.createdBy || '-')}</td>
+                    <td>
+                        <div class="table-actions">
+                            <button class="edit" onclick="editReclamation('${reclamation._id}')">Edit</button>
+                            <button class="delete" onclick="deleteReclamation('${reclamation._id}')">Delete</button>
                         </div>
                     </td>
                 </tr>
@@ -1119,6 +1202,27 @@
         });
     }
 
+    async function saveReclamation() {
+        const reclamationId = document.getElementById('reclamationId').value;
+        const sujet = document.getElementById('reclamationSujet').value.trim();
+        const description = document.getElementById('reclamationDescription').value.trim();
+        const statut = document.getElementById('reclamationStatut').value;
+        const priorite = document.getElementById('reclamationPriorite').value;
+
+        if (!sujet) {
+            showMessage('dashboardMessage', 'Reclamation sujet is required.', 'error');
+            return;
+        }
+
+        await saveSimpleEntity({
+            id: reclamationId,
+            url: `${RECLAMATIONS_URL}/reclamations`,
+            payload: { sujet, description, statut, priorite },
+            successMessage: 'Reclamation saved.',
+            resetFn: resetReclamationForm
+        });
+    }
+
     async function saveSimpleEntity({ id, url, payload, successMessage, resetFn }) {
         try {
             await apiRequest(id ? `${url}/${id}` : url, {
@@ -1188,6 +1292,18 @@
         showSection('affectations', document.querySelector('[data-section="affectations"]'));
     }
 
+    function editReclamation(id) {
+        const reclamation = state.reclamations.find((item) => item._id === id);
+        if (!reclamation) return;
+        document.getElementById('reclamationId').value = reclamation._id;
+        document.getElementById('reclamationSujet').value = reclamation.sujet || '';
+        document.getElementById('reclamationDescription').value = reclamation.description || '';
+        document.getElementById('reclamationStatut').value = reclamation.statut || 'ouverte';
+        document.getElementById('reclamationPriorite').value = reclamation.priorite || 'moyenne';
+        document.getElementById('reclamationFormTitle').innerText = 'Edit Reclamation';
+        showSection('reclamations', document.querySelector('[data-section="reclamations"]'));
+    }
+
     async function deleteDepartment(id) {
         await deleteEntity(`${DEPARTMENTS_URL}/departments/${id}`, 'Department deleted.');
     }
@@ -1206,6 +1322,10 @@
 
     async function deleteAffectation(id) {
         await deleteEntity(`${AFFECTATIONS_URL}/affectations/${id}`, 'Affectation deleted.');
+    }
+
+    async function deleteReclamation(id) {
+        await deleteEntity(`${RECLAMATIONS_URL}/reclamations/${id}`, 'Reclamation deleted.');
     }
 
     async function deleteEntity(url, successMessage) {
@@ -1264,6 +1384,15 @@
         document.getElementById('affectationFormTitle').innerText = 'Add Affectation';
     }
 
+    function resetReclamationForm() {
+        document.getElementById('reclamationId').value = '';
+        document.getElementById('reclamationSujet').value = '';
+        document.getElementById('reclamationDescription').value = '';
+        document.getElementById('reclamationStatut').value = 'ouverte';
+        document.getElementById('reclamationPriorite').value = 'moyenne';
+        document.getElementById('reclamationFormTitle').innerText = 'Add Reclamation';
+    }
+
     function logout() {
         state.token = null;
         state.userId = null;
@@ -1273,6 +1402,7 @@
         state.employees = [];
         state.catalogues = [];
         state.affectations = [];
+        state.reclamations = [];
 
         document.getElementById("dashboard").style.display = "none";
         document.getElementById("authContainer").style.display = "flex";
@@ -1284,6 +1414,7 @@
         resetEmployeeForm();
         resetCatalogueForm();
         resetAffectationForm();
+        resetReclamationForm();
 
         renderCounts();
         renderDepartmentTable();
@@ -1291,6 +1422,7 @@
         renderEmployeeTable();
         renderCatalogueTable();
         renderAffectationTable();
+        renderReclamationTable();
         renderSelectOptions();
         showSection('departments', document.querySelector('[data-section="departments"]'));
     }
@@ -1318,8 +1450,10 @@
     renderEmployeeTable();
     renderCatalogueTable();
     renderAffectationTable();
+    renderReclamationTable();
     renderSelectOptions();
 </script>
 
 </body>
 </html>
+
