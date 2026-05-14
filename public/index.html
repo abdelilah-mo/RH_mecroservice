@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Departement App</title>
+<title>RH Microservices Dashboard</title>
 
 <style>
     *{
@@ -99,7 +99,8 @@
     }
 
     .form-group input,
-    .form-group textarea{
+    .form-group textarea,
+    .form-group select{
         width:100%;
         padding:14px;
         border:1px solid var(--border);
@@ -107,10 +108,12 @@
         outline:none;
         transition:0.3s;
         resize:vertical;
+        background:white;
     }
 
     .form-group input:focus,
-    .form-group textarea:focus{
+    .form-group textarea:focus,
+    .form-group select:focus{
         border-color:var(--primary);
     }
 
@@ -175,7 +178,7 @@
     }
 
     .sidebar{
-        width:250px;
+        width:260px;
         background:var(--dark);
         color:white;
         position:fixed;
@@ -183,6 +186,7 @@
         left:0;
         height:100%;
         padding:25px 20px;
+        overflow:auto;
     }
 
     .sidebar h2{
@@ -207,6 +211,7 @@
         padding:14px;
         border-radius:12px;
         transition:0.3s;
+        cursor:pointer;
     }
 
     .menu a:hover,
@@ -215,9 +220,9 @@
     }
 
     .main{
-        margin-left:250px;
+        margin-left:260px;
         padding:30px;
-        width:100%;
+        width:calc(100% - 260px);
     }
 
     .topbar{
@@ -235,14 +240,14 @@
 
     .cards{
         display:grid;
-        grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-        gap:20px;
+        grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+        gap:18px;
         margin-bottom:24px;
     }
 
     .card{
         background:white;
-        padding:25px;
+        padding:22px;
         border-radius:18px;
         box-shadow:0 5px 20px rgba(0,0,0,0.05);
     }
@@ -250,13 +255,21 @@
     .card h3{
         color:var(--gray);
         margin-bottom:10px;
-        font-size:15px;
+        font-size:14px;
     }
 
     .card p{
-        font-size:28px;
+        font-size:24px;
         font-weight:bold;
         color:var(--dark);
+    }
+
+    .section{
+        display:none;
+    }
+
+    .section.active{
+        display:block;
     }
 
     .content-grid{
@@ -347,7 +360,7 @@
         display:none;
     }
 
-    @media(max-width:992px){
+    @media(max-width:1100px){
         .content-grid{
             grid-template-columns:1fr;
         }
@@ -362,6 +375,7 @@
 
         .main{
             margin-left:0;
+            width:100%;
         }
 
         .dashboard{
@@ -376,8 +390,8 @@
 <div class="auth-container" id="authContainer">
     <div class="auth-box">
         <div class="logo">
-            <h1>Departement App</h1>
-            <p>Authentication and department management</p>
+            <h1>RH Microservices</h1>
+            <p>Authentication and multi-service CRUD dashboard</p>
         </div>
 
         <div class="message" id="authMessage"></div>
@@ -432,21 +446,25 @@
         <p id="sidebarUser">Connected as guest</p>
 
         <div class="menu">
-            <a href="#" class="active">Dashboard</a>
-            <a href="#">Departement</a>
-           
+            <a class="menu-link active" data-section="departments" onclick="showSection('departments', this)">Departments</a>
+            <a class="menu-link" data-section="positions" onclick="showSection('positions', this)">Positions</a>
+            <a class="menu-link" data-section="employees" onclick="showSection('employees', this)">Employees</a>
+            <a class="menu-link" data-section="catalogues" onclick="showSection('catalogues', this)">Catalogues</a>
+            <a class="menu-link" data-section="affectations" onclick="showSection('affectations', this)">Affectations</a>
+            <a onclick="loadAllData()">Refresh all</a>
+            <a onclick="logout()">Logout</a>
         </div>
     </div>
 
     <div class="main">
         <div class="topbar">
             <div>
-                <h2>Welcome</h2>
+                <h2 id="pageTitle">Departments</h2>
                 <p id="welcomeUser">User</p>
             </div>
 
             <div class="panel-actions">
-                <button class="btn btn-secondary" onclick="refreshDepartments()">Refresh</button>
+                <button class="btn btn-secondary" onclick="loadAllData()">Refresh</button>
                 <button class="btn btn-danger" onclick="logout()">Logout</button>
             </div>
         </div>
@@ -455,50 +473,197 @@
 
         <div class="cards">
             <div class="card">
-                <h3>Total Departements</h3>
+                <h3>Departments</h3>
                 <p id="totalDepartments">0</p>
             </div>
 
             <div class="card">
-                <h3>Connected User</h3>
-                <p id="cardUsername">-</p>
+                <h3>Positions</h3>
+                <p id="totalPositions">0</p>
             </div>
 
             <div class="card">
-                <h3>Last Creator</h3>
-                <p id="lastCreator">-</p>
+                <h3>Employees</h3>
+                <p id="totalEmployees">0</p>
+            </div>
+
+            <div class="card">
+                <h3>Catalogues</h3>
+                <p id="totalCatalogues">0</p>
+            </div>
+
+            <div class="card">
+                <h3>Affectations</h3>
+                <p id="totalAffectations">0</p>
             </div>
         </div>
 
-        <div class="content-grid">
-            <div class="panel">
-                <h3 id="formTitle">Add Departement</h3>
-                <p>Create a new department or update an existing one.</p>
+        <div id="departmentsSection" class="section active">
+            <div class="content-grid">
+                <div class="panel">
+                    <h3 id="departmentFormTitle">Add Department</h3>
+                    <p>Create a new department or update an existing one.</p>
+                    <input type="hidden" id="departmentId">
 
-                <input type="hidden" id="departmentId">
+                    <div class="form-group">
+                        <label>Nom</label>
+                        <input type="text" id="departmentName" placeholder="Ressources humaines">
+                    </div>
 
-                <div class="form-group">
-                    <label>Nom</label>
-                    <input type="text" id="departmentName" placeholder="Ressources humaines">
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="departmentDescription" rows="5" placeholder="Gestion recrutement, paie et suivi..."></textarea>
+                    </div>
+
+                    <div class="panel-actions">
+                        <button class="btn" onclick="saveDepartment()">Save</button>
+                        <button class="btn btn-secondary" onclick="resetDepartmentForm()">Reset</button>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label>Description</label>
-                    <textarea id="departmentDescription" rows="6" placeholder="Gestion recrutement, paie et suivi..."></textarea>
-                </div>
-
-                <div class="panel-actions">
-                    <button class="btn" onclick="saveDepartment()">Save</button>
-                    <button class="btn btn-secondary" onclick="resetDepartmentForm()">Reset</button>
+                <div class="panel">
+                    <h3>Department List</h3>
+                    <p>All departments stored in the department service.</p>
+                    <div id="departmentsContainer"></div>
                 </div>
             </div>
+        </div>
 
-            <div class="panel">
-                <h3>Departement List</h3>
-                <p>All departments stored in MongoDB with creator username.</p>
+        <div id="positionsSection" class="section">
+            <div class="content-grid">
+                <div class="panel">
+                    <h3 id="positionFormTitle">Add Position</h3>
+                    <p>Create a new position or update an existing one.</p>
+                    <input type="hidden" id="positionId">
 
-                <div id="departmentsContainer">
-                    <div class="empty-state">No departments yet.</div>
+                    <div class="form-group">
+                        <label>Nom</label>
+                        <input type="text" id="positionName" placeholder="Developpeur backend">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="positionDescription" rows="5" placeholder="Description de la position..."></textarea>
+                    </div>
+
+                    <div class="panel-actions">
+                        <button class="btn" onclick="savePosition()">Save</button>
+                        <button class="btn btn-secondary" onclick="resetPositionForm()">Reset</button>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3>Position List</h3>
+                    <p>All positions stored in the position service.</p>
+                    <div id="positionsContainer"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="employeesSection" class="section">
+            <div class="content-grid">
+                <div class="panel">
+                    <h3 id="employeeFormTitle">Add Employee</h3>
+                    <p>Select department and position from the other services.</p>
+                    <input type="hidden" id="employeeId">
+
+                    <div class="form-group">
+                        <label>Nom</label>
+                        <input type="text" id="employeeName" placeholder="Ayman El Idrissi">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="employeeEmail" placeholder="ayman@gmail.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Departement</label>
+                        <select id="employeeDepartmentSelect"></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Position</label>
+                        <select id="employeePositionSelect"></select>
+                    </div>
+
+                    <div class="panel-actions">
+                        <button class="btn" onclick="saveEmployee()">Save</button>
+                        <button class="btn btn-secondary" onclick="resetEmployeeForm()">Reset</button>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3>Employee List</h3>
+                    <p>Each employee is linked to one department and one position.</p>
+                    <div id="employeesContainer"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="cataloguesSection" class="section">
+            <div class="content-grid">
+                <div class="panel">
+                    <h3 id="catalogueFormTitle">Add Catalogue</h3>
+                    <p>Create a catalogue that can be assigned later to employees.</p>
+                    <input type="hidden" id="catalogueId">
+
+                    <div class="form-group">
+                        <label>Nom</label>
+                        <input type="text" id="catalogueName" placeholder="Catalogue RH 2026">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="catalogueDescription" rows="5" placeholder="Description du catalogue..."></textarea>
+                    </div>
+
+                    <div class="panel-actions">
+                        <button class="btn" onclick="saveCatalogue()">Save</button>
+                        <button class="btn btn-secondary" onclick="resetCatalogueForm()">Reset</button>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3>Catalogue List</h3>
+                    <p>All catalogues stored in the catalogue service.</p>
+                    <div id="cataloguesContainer"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="affectationsSection" class="section">
+            <div class="content-grid">
+                <div class="panel">
+                    <h3 id="affectationFormTitle">Add Affectation</h3>
+                    <p>Assign a catalogue to one employee using values from the other services.</p>
+                    <input type="hidden" id="affectationId">
+
+                    <div class="form-group">
+                        <label>Employee</label>
+                        <select id="affectationEmployeeSelect"></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Catalogue</label>
+                        <select id="affectationCatalogueSelect"></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Commentaire</label>
+                        <textarea id="affectationCommentaire" rows="5" placeholder="Affectation prioritaire, remarque..."></textarea>
+                    </div>
+
+                    <div class="panel-actions">
+                        <button class="btn" onclick="saveAffectation()">Save</button>
+                        <button class="btn btn-secondary" onclick="resetAffectationForm()">Reset</button>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3>Affectation List</h3>
+                    <p>Assignments between employees and catalogues.</p>
+                    <div id="affectationsContainer"></div>
                 </div>
             </div>
         </div>
@@ -508,16 +673,27 @@
 <script>
     const AUTH_URL = 'http://localhost:3001';
     const DEPARTMENTS_URL = 'http://localhost:3003';
+    const POSITIONS_URL = 'http://localhost:3004';
+    const EMPLOYEES_URL = 'http://localhost:3005';
+    const CATALOGUES_URL = 'http://localhost:3006';
+    const AFFECTATIONS_URL = 'http://localhost:3007';
 
     const loginTab = document.getElementById("loginTab");
     const registerTab = document.getElementById("registerTab");
     const loginForm = document.getElementById("loginForm");
     const registerForm = document.getElementById("registerForm");
 
-    let token = null;
-    let userId = null;
-    let username = null;
-    let departments = [];
+    const state = {
+        token: null,
+        userId: null,
+        username: null,
+        activeSection: 'departments',
+        departments: [],
+        positions: [],
+        employees: [],
+        catalogues: [],
+        affectations: []
+    };
 
     loginTab.onclick = () => {
         loginTab.classList.add("active");
@@ -538,46 +714,70 @@
         box.textContent = text;
         box.className = `message ${type} show`;
         clearTimeout(box.timer);
-        box.timer = setTimeout(() => {
-            box.classList.remove('show');
-        }, 4000);
+        box.timer = setTimeout(() => box.classList.remove('show'), 4000);
+    }
+
+    function getAuthHeaders() {
+        return {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${state.token}`
+        };
+    }
+
+    function showSection(sectionName, trigger = null) {
+        state.activeSection = sectionName;
+        document.querySelectorAll('.section').forEach((section) => section.classList.remove('active'));
+        document.querySelectorAll('.menu-link').forEach((link) => link.classList.remove('active'));
+        document.getElementById(`${sectionName}Section`).classList.add('active');
+        if (trigger) {
+            trigger.classList.add('active');
+        }
+
+        const labels = {
+            departments: 'Departments',
+            positions: 'Positions',
+            employees: 'Employees',
+            catalogues: 'Catalogues',
+            affectations: 'Affectations'
+        };
+
+        document.getElementById('pageTitle').innerText = labels[sectionName];
+    }
+
+    async function apiRequest(url, options = {}) {
+        const response = await fetch(url, options);
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Request failed');
+        }
+
+        return data;
     }
 
     async function register() {
-        const registerUsername = document.getElementById("registerUsername").value.trim();
+        const username = document.getElementById("registerUsername").value.trim();
         const email = document.getElementById("registerEmail").value.trim();
         const password = document.getElementById("registerPassword").value;
 
-        if (!registerUsername || !email || !password) {
+        if (!username || !email || !password) {
             showMessage('authMessage', 'Username, email and password are required.', 'error');
             return;
         }
 
         try {
-            const response = await fetch(`${AUTH_URL}/auth/register`, {
+            await apiRequest(`${AUTH_URL}/auth/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    username: registerUsername,
-                    email,
-                    password
-                })
+                body: JSON.stringify({ username, email, password })
             });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                showMessage('authMessage', data.error || 'Register failed.', 'error');
-                return;
-            }
 
             showMessage('authMessage', 'Account created successfully. You can login now.', 'success');
             loginTab.click();
             document.getElementById("loginEmail").value = email;
-            document.getElementById("loginPassword").value = '';
             document.getElementById("registerPassword").value = '';
         } catch (error) {
-            showMessage('authMessage', 'Auth service is unreachable.', 'error');
+            showMessage('authMessage', error.message, 'error');
         }
     }
 
@@ -591,110 +791,220 @@
         }
 
         try {
-            const response = await fetch(`${AUTH_URL}/auth/login`, {
+            const data = await apiRequest(`${AUTH_URL}/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })
             });
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                showMessage('authMessage', data.error || 'Login failed.', 'error');
-                return;
-            }
-
-            token = data.token;
-            userId = data.userId;
-            username = data.username || email;
+            state.token = data.token;
+            state.userId = data.userId;
+            state.username = data.username || email;
 
             document.getElementById("authContainer").style.display = "none";
             document.getElementById("dashboard").style.display = "flex";
-            document.getElementById("welcomeUser").innerText = username;
-            document.getElementById("sidebarUser").innerText = `Connected as ${username}`;
-            document.getElementById("cardUsername").innerText = username;
+            document.getElementById("welcomeUser").innerText = `Connected as ${state.username}`;
+            document.getElementById("sidebarUser").innerText = `Connected as ${state.username}`;
 
+            await loadAllData();
             showMessage('dashboardMessage', 'Login successful.', 'success');
-            await refreshDepartments();
         } catch (error) {
-            showMessage('authMessage', 'Unable to contact auth service.', 'error');
+            showMessage('authMessage', error.message, 'error');
         }
     }
 
-    async function refreshDepartments() {
-        if (!token) {
+    async function loadAllData() {
+        if (!state.token) {
             return;
         }
 
         try {
-            const response = await fetch(`${DEPARTMENTS_URL}/departments`, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
+            const [departmentsData, positionsData, employeesData, cataloguesData, affectationsData] = await Promise.all([
+                apiRequest(`${DEPARTMENTS_URL}/departments`, { headers: getAuthHeaders() }),
+                apiRequest(`${POSITIONS_URL}/positions`, { headers: getAuthHeaders() }),
+                apiRequest(`${EMPLOYEES_URL}/employees`, { headers: getAuthHeaders() }),
+                apiRequest(`${CATALOGUES_URL}/catalogues`, { headers: getAuthHeaders() }),
+                apiRequest(`${AFFECTATIONS_URL}/affectations`, { headers: getAuthHeaders() })
+            ]);
 
-            const data = await response.json();
+            state.departments = departmentsData.departments || [];
+            state.positions = positionsData.positions || [];
+            state.employees = employeesData.employees || [];
+            state.catalogues = cataloguesData.catalogues || [];
+            state.affectations = affectationsData.affectations || [];
 
-            if (!response.ok) {
-                showMessage('dashboardMessage', data.error || 'Unable to load departments.', 'error');
-                return;
-            }
-
-            departments = data.departments || [];
-            renderDepartments();
+            renderCounts();
+            renderDepartmentTable();
+            renderPositionTable();
+            renderEmployeeTable();
+            renderCatalogueTable();
+            renderAffectationTable();
+            renderSelectOptions();
         } catch (error) {
-            showMessage('dashboardMessage', 'Department service is unreachable.', 'error');
+            showMessage('dashboardMessage', error.message, 'error');
         }
     }
 
-    function renderDepartments() {
-        document.getElementById('totalDepartments').innerText = departments.length;
-        document.getElementById('lastCreator').innerText = departments[0]?.createdBy || '-';
+    function renderCounts() {
+        document.getElementById('totalDepartments').innerText = state.departments.length;
+        document.getElementById('totalPositions').innerText = state.positions.length;
+        document.getElementById('totalEmployees').innerText = state.employees.length;
+        document.getElementById('totalCatalogues').innerText = state.catalogues.length;
+        document.getElementById('totalAffectations').innerText = state.affectations.length;
+    }
 
-        const container = document.getElementById('departmentsContainer');
+    function renderTable(containerId, headers, rowsHtml) {
+        const container = document.getElementById(containerId);
 
-        if (!departments.length) {
-            container.innerHTML = '<div class="empty-state">No departments yet.</div>';
+        if (!rowsHtml.length) {
+            container.innerHTML = '<div class="empty-state">No data yet.</div>';
             return;
         }
 
         container.innerHTML = `
             <table>
                 <thead>
-                    <tr>
-                        <th>Nom</th>
-                        <th>Description</th>
-                        <th>Created By</th>
-                        <th>Created At</th>
-                        <th>Actions</th>
-                    </tr>
+                    <tr>${headers.map((header) => `<th>${header}</th>`).join('')}</tr>
                 </thead>
                 <tbody>
-                    ${departments.map((department) => `
-                        <tr>
-                            <td><strong>${escapeHtml(department.nom)}</strong></td>
-                            <td>${escapeHtml(department.description || '-')}</td>
-                            <td>${escapeHtml(department.createdBy || '-')}</td>
-                            <td>${formatDate(department.createdAt)}</td>
-                            <td>
-                                <div class="table-actions">
-                                    <button class="edit" onclick="editDepartment('${department._id}')">Edit</button>
-                                    <button class="delete" onclick="deleteDepartment('${department._id}')">Delete</button>
-                                </div>
-                            </td>
-                        </tr>
-                    `).join('')}
+                    ${rowsHtml.join('')}
                 </tbody>
             </table>
         `;
     }
 
-    async function saveDepartment() {
-        if (!token) {
-            showMessage('dashboardMessage', 'Please login first.', 'info');
-            return;
-        }
+    function renderDepartmentTable() {
+        renderTable(
+            'departmentsContainer',
+            ['Nom', 'Description', 'Created By', 'Created At', 'Actions'],
+            state.departments.map((department) => `
+                <tr>
+                    <td><strong>${escapeHtml(department.nom)}</strong></td>
+                    <td>${escapeHtml(department.description || '-')}</td>
+                    <td>${escapeHtml(department.createdBy || '-')}</td>
+                    <td>${formatDate(department.createdAt)}</td>
+                    <td>
+                        <div class="table-actions">
+                            <button class="edit" onclick="editDepartment('${department._id}')">Edit</button>
+                            <button class="delete" onclick="deleteDepartment('${department._id}')">Delete</button>
+                        </div>
+                    </td>
+                </tr>
+            `)
+        );
+    }
 
+    function renderPositionTable() {
+        renderTable(
+            'positionsContainer',
+            ['Nom', 'Description', 'Created By', 'Created At', 'Actions'],
+            state.positions.map((position) => `
+                <tr>
+                    <td><strong>${escapeHtml(position.nom)}</strong></td>
+                    <td>${escapeHtml(position.description || '-')}</td>
+                    <td>${escapeHtml(position.createdBy || '-')}</td>
+                    <td>${formatDate(position.createdAt)}</td>
+                    <td>
+                        <div class="table-actions">
+                            <button class="edit" onclick="editPosition('${position._id}')">Edit</button>
+                            <button class="delete" onclick="deletePosition('${position._id}')">Delete</button>
+                        </div>
+                    </td>
+                </tr>
+            `)
+        );
+    }
+
+    function renderEmployeeTable() {
+        renderTable(
+            'employeesContainer',
+            ['Nom', 'Email', 'Departement', 'Position', 'Created By', 'Actions'],
+            state.employees.map((employee) => `
+                <tr>
+                    <td><strong>${escapeHtml(employee.nom)}</strong></td>
+                    <td>${escapeHtml(employee.email)}</td>
+                    <td>${escapeHtml(employee.departmentName)}</td>
+                    <td>${escapeHtml(employee.positionName)}</td>
+                    <td>${escapeHtml(employee.createdBy || '-')}</td>
+                    <td>
+                        <div class="table-actions">
+                            <button class="edit" onclick="editEmployee('${employee._id}')">Edit</button>
+                            <button class="delete" onclick="deleteEmployee('${employee._id}')">Delete</button>
+                        </div>
+                    </td>
+                </tr>
+            `)
+        );
+    }
+
+    function renderCatalogueTable() {
+        renderTable(
+            'cataloguesContainer',
+            ['Nom', 'Description', 'Created By', 'Created At', 'Actions'],
+            state.catalogues.map((catalogue) => `
+                <tr>
+                    <td><strong>${escapeHtml(catalogue.nom)}</strong></td>
+                    <td>${escapeHtml(catalogue.description || '-')}</td>
+                    <td>${escapeHtml(catalogue.createdBy || '-')}</td>
+                    <td>${formatDate(catalogue.createdAt)}</td>
+                    <td>
+                        <div class="table-actions">
+                            <button class="edit" onclick="editCatalogue('${catalogue._id}')">Edit</button>
+                            <button class="delete" onclick="deleteCatalogue('${catalogue._id}')">Delete</button>
+                        </div>
+                    </td>
+                </tr>
+            `)
+        );
+    }
+
+    function renderAffectationTable() {
+        renderTable(
+            'affectationsContainer',
+            ['Employee', 'Catalogue', 'Commentaire', 'Created By', 'Actions'],
+            state.affectations.map((affectation) => `
+                <tr>
+                    <td><strong>${escapeHtml(affectation.employeeName)}</strong></td>
+                    <td>${escapeHtml(affectation.catalogueName)}</td>
+                    <td>${escapeHtml(affectation.commentaire || '-')}</td>
+                    <td>${escapeHtml(affectation.createdBy || '-')}</td>
+                    <td>
+                        <div class="table-actions">
+                            <button class="edit" onclick="editAffectation('${affectation._id}')">Edit</button>
+                            <button class="delete" onclick="deleteAffectation('${affectation._id}')">Delete</button>
+                        </div>
+                    </td>
+                </tr>
+            `)
+        );
+    }
+
+    function renderSelectOptions() {
+        fillSelect('employeeDepartmentSelect', state.departments, 'Select department');
+        fillSelect('employeePositionSelect', state.positions, 'Select position');
+        fillSelect('affectationEmployeeSelect', state.employees, 'Select employee', (item) => item.nom);
+        fillSelect('affectationCatalogueSelect', state.catalogues, 'Select catalogue');
+    }
+
+    function fillSelect(selectId, items, placeholder, labelResolver = (item) => item.nom) {
+        const select = document.getElementById(selectId);
+        select.innerHTML = `<option value="">${placeholder}</option>` + items.map((item) => `
+            <option value="${item._id}">${escapeHtml(labelResolver(item))}</option>
+        `).join('');
+    }
+
+    function getSelectedData(selectId, items, labelResolver = (item) => item.nom) {
+        const select = document.getElementById(selectId);
+        const id = select.value;
+        const item = items.find((entry) => entry._id === id);
+
+        return {
+            id,
+            name: item ? labelResolver(item) : ''
+        };
+    }
+
+    async function saveDepartment() {
         const departmentId = document.getElementById('departmentId').value;
         const nom = document.getElementById('departmentName').value.trim();
         const description = document.getElementById('departmentDescription').value.trim();
@@ -704,78 +1014,215 @@
             return;
         }
 
-        const method = departmentId ? 'PATCH' : 'POST';
-        const url = departmentId
-            ? `${DEPARTMENTS_URL}/departments/${departmentId}`
-            : `${DEPARTMENTS_URL}/departments`;
+        await saveSimpleEntity({
+            id: departmentId,
+            url: `${DEPARTMENTS_URL}/departments`,
+            payload: { nom, description },
+            successMessage: 'Department saved.',
+            resetFn: resetDepartmentForm
+        });
+    }
 
+    async function savePosition() {
+        const positionId = document.getElementById('positionId').value;
+        const nom = document.getElementById('positionName').value.trim();
+        const description = document.getElementById('positionDescription').value.trim();
+
+        if (!nom) {
+            showMessage('dashboardMessage', 'Position name is required.', 'error');
+            return;
+        }
+
+        await saveSimpleEntity({
+            id: positionId,
+            url: `${POSITIONS_URL}/positions`,
+            payload: { nom, description },
+            successMessage: 'Position saved.',
+            resetFn: resetPositionForm
+        });
+    }
+
+    async function saveCatalogue() {
+        const catalogueId = document.getElementById('catalogueId').value;
+        const nom = document.getElementById('catalogueName').value.trim();
+        const description = document.getElementById('catalogueDescription').value.trim();
+
+        if (!nom) {
+            showMessage('dashboardMessage', 'Catalogue name is required.', 'error');
+            return;
+        }
+
+        await saveSimpleEntity({
+            id: catalogueId,
+            url: `${CATALOGUES_URL}/catalogues`,
+            payload: { nom, description },
+            successMessage: 'Catalogue saved.',
+            resetFn: resetCatalogueForm
+        });
+    }
+
+    async function saveEmployee() {
+        const employeeId = document.getElementById('employeeId').value;
+        const nom = document.getElementById('employeeName').value.trim();
+        const email = document.getElementById('employeeEmail').value.trim();
+        const department = getSelectedData('employeeDepartmentSelect', state.departments);
+        const position = getSelectedData('employeePositionSelect', state.positions);
+
+        if (!nom || !email || !department.id || !position.id) {
+            showMessage('dashboardMessage', 'Employee name, email, department and position are required.', 'error');
+            return;
+        }
+
+        const payload = {
+            nom,
+            email,
+            departmentId: department.id,
+            departmentName: department.name,
+            positionId: position.id,
+            positionName: position.name
+        };
+
+        await saveSimpleEntity({
+            id: employeeId,
+            url: `${EMPLOYEES_URL}/employees`,
+            payload,
+            successMessage: 'Employee saved.',
+            resetFn: resetEmployeeForm
+        });
+    }
+
+    async function saveAffectation() {
+        const affectationId = document.getElementById('affectationId').value;
+        const employee = getSelectedData('affectationEmployeeSelect', state.employees, (item) => item.nom);
+        const catalogue = getSelectedData('affectationCatalogueSelect', state.catalogues);
+        const commentaire = document.getElementById('affectationCommentaire').value.trim();
+
+        if (!employee.id || !catalogue.id) {
+            showMessage('dashboardMessage', 'Employee and catalogue are required.', 'error');
+            return;
+        }
+
+        const payload = {
+            employeeId: employee.id,
+            employeeName: employee.name,
+            catalogueId: catalogue.id,
+            catalogueName: catalogue.name,
+            commentaire
+        };
+
+        await saveSimpleEntity({
+            id: affectationId,
+            url: `${AFFECTATIONS_URL}/affectations`,
+            payload,
+            successMessage: 'Affectation saved.',
+            resetFn: resetAffectationForm
+        });
+    }
+
+    async function saveSimpleEntity({ id, url, payload, successMessage, resetFn }) {
         try {
-            const response = await fetch(url, {
-                method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({ nom, description })
+            await apiRequest(id ? `${url}/${id}` : url, {
+                method: id ? 'PATCH' : 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify(payload)
             });
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                showMessage('dashboardMessage', data.error || 'Unable to save department.', 'error');
-                return;
-            }
-
-            showMessage('dashboardMessage', data.message || 'Department saved.', 'success');
-            resetDepartmentForm();
-            await refreshDepartments();
+            resetFn();
+            await loadAllData();
+            showMessage('dashboardMessage', successMessage, 'success');
         } catch (error) {
-            showMessage('dashboardMessage', 'Error while saving department.', 'error');
+            showMessage('dashboardMessage', error.message, 'error');
         }
     }
 
     function editDepartment(id) {
-        const department = departments.find((item) => item._id === id);
-
-        if (!department) {
-            return;
-        }
-
+        const department = state.departments.find((item) => item._id === id);
+        if (!department) return;
         document.getElementById('departmentId').value = department._id;
         document.getElementById('departmentName').value = department.nom || '';
         document.getElementById('departmentDescription').value = department.description || '';
-        document.getElementById('formTitle').innerText = 'Edit Departement';
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        document.getElementById('departmentFormTitle').innerText = 'Edit Department';
+        showSection('departments', document.querySelector('[data-section="departments"]'));
+    }
+
+    function editPosition(id) {
+        const position = state.positions.find((item) => item._id === id);
+        if (!position) return;
+        document.getElementById('positionId').value = position._id;
+        document.getElementById('positionName').value = position.nom || '';
+        document.getElementById('positionDescription').value = position.description || '';
+        document.getElementById('positionFormTitle').innerText = 'Edit Position';
+        showSection('positions', document.querySelector('[data-section="positions"]'));
+    }
+
+    function editEmployee(id) {
+        const employee = state.employees.find((item) => item._id === id);
+        if (!employee) return;
+        document.getElementById('employeeId').value = employee._id;
+        document.getElementById('employeeName').value = employee.nom || '';
+        document.getElementById('employeeEmail').value = employee.email || '';
+        document.getElementById('employeeDepartmentSelect').value = employee.departmentId || '';
+        document.getElementById('employeePositionSelect').value = employee.positionId || '';
+        document.getElementById('employeeFormTitle').innerText = 'Edit Employee';
+        showSection('employees', document.querySelector('[data-section="employees"]'));
+    }
+
+    function editCatalogue(id) {
+        const catalogue = state.catalogues.find((item) => item._id === id);
+        if (!catalogue) return;
+        document.getElementById('catalogueId').value = catalogue._id;
+        document.getElementById('catalogueName').value = catalogue.nom || '';
+        document.getElementById('catalogueDescription').value = catalogue.description || '';
+        document.getElementById('catalogueFormTitle').innerText = 'Edit Catalogue';
+        showSection('catalogues', document.querySelector('[data-section="catalogues"]'));
+    }
+
+    function editAffectation(id) {
+        const affectation = state.affectations.find((item) => item._id === id);
+        if (!affectation) return;
+        document.getElementById('affectationId').value = affectation._id;
+        document.getElementById('affectationEmployeeSelect').value = affectation.employeeId || '';
+        document.getElementById('affectationCatalogueSelect').value = affectation.catalogueId || '';
+        document.getElementById('affectationCommentaire').value = affectation.commentaire || '';
+        document.getElementById('affectationFormTitle').innerText = 'Edit Affectation';
+        showSection('affectations', document.querySelector('[data-section="affectations"]'));
     }
 
     async function deleteDepartment(id) {
-        if (!token) {
-            return;
-        }
+        await deleteEntity(`${DEPARTMENTS_URL}/departments/${id}`, 'Department deleted.');
+    }
 
-        if (!confirm('Delete this department?')) {
+    async function deletePosition(id) {
+        await deleteEntity(`${POSITIONS_URL}/positions/${id}`, 'Position deleted.');
+    }
+
+    async function deleteEmployee(id) {
+        await deleteEntity(`${EMPLOYEES_URL}/employees/${id}`, 'Employee deleted.');
+    }
+
+    async function deleteCatalogue(id) {
+        await deleteEntity(`${CATALOGUES_URL}/catalogues/${id}`, 'Catalogue deleted.');
+    }
+
+    async function deleteAffectation(id) {
+        await deleteEntity(`${AFFECTATIONS_URL}/affectations/${id}`, 'Affectation deleted.');
+    }
+
+    async function deleteEntity(url, successMessage) {
+        if (!confirm('Delete this item?')) {
             return;
         }
 
         try {
-            const response = await fetch(`${DEPARTMENTS_URL}/departments/${id}`, {
+            await apiRequest(url, {
                 method: 'DELETE',
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
+                headers: getAuthHeaders()
             });
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                showMessage('dashboardMessage', data.error || 'Unable to delete department.', 'error');
-                return;
-            }
-
-            showMessage('dashboardMessage', data.message || 'Department deleted.', 'success');
-            await refreshDepartments();
+            await loadAllData();
+            showMessage('dashboardMessage', successMessage, 'success');
         } catch (error) {
-            showMessage('dashboardMessage', 'Error while deleting department.', 'error');
+            showMessage('dashboardMessage', error.message, 'error');
         }
     }
 
@@ -783,24 +1230,69 @@
         document.getElementById('departmentId').value = '';
         document.getElementById('departmentName').value = '';
         document.getElementById('departmentDescription').value = '';
-        document.getElementById('formTitle').innerText = 'Add Departement';
+        document.getElementById('departmentFormTitle').innerText = 'Add Department';
+    }
+
+    function resetPositionForm() {
+        document.getElementById('positionId').value = '';
+        document.getElementById('positionName').value = '';
+        document.getElementById('positionDescription').value = '';
+        document.getElementById('positionFormTitle').innerText = 'Add Position';
+    }
+
+    function resetEmployeeForm() {
+        document.getElementById('employeeId').value = '';
+        document.getElementById('employeeName').value = '';
+        document.getElementById('employeeEmail').value = '';
+        document.getElementById('employeeDepartmentSelect').value = '';
+        document.getElementById('employeePositionSelect').value = '';
+        document.getElementById('employeeFormTitle').innerText = 'Add Employee';
+    }
+
+    function resetCatalogueForm() {
+        document.getElementById('catalogueId').value = '';
+        document.getElementById('catalogueName').value = '';
+        document.getElementById('catalogueDescription').value = '';
+        document.getElementById('catalogueFormTitle').innerText = 'Add Catalogue';
+    }
+
+    function resetAffectationForm() {
+        document.getElementById('affectationId').value = '';
+        document.getElementById('affectationEmployeeSelect').value = '';
+        document.getElementById('affectationCatalogueSelect').value = '';
+        document.getElementById('affectationCommentaire').value = '';
+        document.getElementById('affectationFormTitle').innerText = 'Add Affectation';
     }
 
     function logout() {
-        token = null;
-        userId = null;
-        username = null;
-        departments = [];
+        state.token = null;
+        state.userId = null;
+        state.username = null;
+        state.departments = [];
+        state.positions = [];
+        state.employees = [];
+        state.catalogues = [];
+        state.affectations = [];
 
         document.getElementById("dashboard").style.display = "none";
         document.getElementById("authContainer").style.display = "flex";
         document.getElementById("welcomeUser").innerText = 'User';
         document.getElementById("sidebarUser").innerText = 'Connected as guest';
-        document.getElementById("cardUsername").innerText = '-';
-        document.getElementById("totalDepartments").innerText = '0';
-        document.getElementById("lastCreator").innerText = '-';
-        document.getElementById("departmentsContainer").innerHTML = '<div class="empty-state">No departments yet.</div>';
+
         resetDepartmentForm();
+        resetPositionForm();
+        resetEmployeeForm();
+        resetCatalogueForm();
+        resetAffectationForm();
+
+        renderCounts();
+        renderDepartmentTable();
+        renderPositionTable();
+        renderEmployeeTable();
+        renderCatalogueTable();
+        renderAffectationTable();
+        renderSelectOptions();
+        showSection('departments', document.querySelector('[data-section="departments"]'));
     }
 
     function formatDate(value) {
@@ -819,6 +1311,14 @@
             .replaceAll('"', '&quot;')
             .replaceAll("'", '&#39;');
     }
+
+    renderCounts();
+    renderDepartmentTable();
+    renderPositionTable();
+    renderEmployeeTable();
+    renderCatalogueTable();
+    renderAffectationTable();
+    renderSelectOptions();
 </script>
 
 </body>
