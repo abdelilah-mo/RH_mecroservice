@@ -21,6 +21,7 @@ const app = express();
 
 app.use(express.json());
 
+// Autorise les appels du front et les headers utiles entre services.
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -72,6 +73,7 @@ const employeeSchema = new mongoose.Schema(
 
 const Employee = mongoose.model('Employee', employeeSchema);
 
+// Verifie le JWT puis attache l'utilisateur connecte a la requete.
 function verifyToken(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
 
@@ -89,10 +91,12 @@ function verifyToken(req, res, next) {
   }
 }
 
+// Verifie qu'un identifiant respecte le format MongoDB.
 function validateObjectId(id) {
   return mongoose.Types.ObjectId.isValid(id);
 }
 
+// Nettoie les champs recus avant creation ou mise a jour d'un employe.
 function normalizeEmployeePayload(body) {
   return {
     nom: body.nom?.trim(),
@@ -104,6 +108,7 @@ function normalizeEmployeePayload(body) {
   };
 }
 
+// Retourne tous les employes du plus recent au plus ancien.
 app.get('/employees', verifyToken, async (req, res) => {
   try {
     const employees = await Employee.find().sort({ createdAt: -1 });
@@ -113,6 +118,7 @@ app.get('/employees', verifyToken, async (req, res) => {
   }
 });
 
+// Retourne un employe precis a partir de son identifiant.
 app.get('/employees/:id', verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -133,6 +139,7 @@ app.get('/employees/:id', verifyToken, async (req, res) => {
   }
 });
 
+// Cree un nouvel employe avec ses references departement et position.
 app.post('/employees', verifyToken, async (req, res) => {
   try {
     const payload = normalizeEmployeePayload(req.body);
@@ -155,6 +162,7 @@ app.post('/employees', verifyToken, async (req, res) => {
   }
 });
 
+// Met a jour uniquement les champs recus pour un employe.
 app.patch('/employees/:id', verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -195,6 +203,7 @@ app.patch('/employees/:id', verifyToken, async (req, res) => {
   }
 });
 
+// Supprime un employe si son identifiant existe.
 app.delete('/employees/:id', verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -215,6 +224,7 @@ app.delete('/employees/:id', verifyToken, async (req, res) => {
   }
 });
 
+// Demarre le service apres connexion reussie a MongoDB.
 async function startServer() {
   try {
     const mongoUri = process.env.EMPLOYEES_MONGO_URI;

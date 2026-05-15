@@ -21,6 +21,7 @@ const app = express();
 
 app.use(express.json());
 
+// Autorise les appels du front et les headers utiles entre services.
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -53,6 +54,7 @@ const positionSchema = new mongoose.Schema(
 
 const Position = mongoose.model('Position', positionSchema);
 
+// Verifie le JWT puis attache l'utilisateur connecte a la requete.
 function verifyToken(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
 
@@ -70,10 +72,12 @@ function verifyToken(req, res, next) {
   }
 }
 
+// Verifie qu'un identifiant respecte le format MongoDB.
 function validateObjectId(id) {
   return mongoose.Types.ObjectId.isValid(id);
 }
 
+// Retourne toutes les positions du plus recent au plus ancien.
 app.get('/positions', verifyToken, async (req, res) => {
   try {
     const positions = await Position.find().sort({ createdAt: -1 });
@@ -83,6 +87,7 @@ app.get('/positions', verifyToken, async (req, res) => {
   }
 });
 
+// Retourne une position precise a partir de son identifiant.
 app.get('/positions/:id', verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -103,6 +108,7 @@ app.get('/positions/:id', verifyToken, async (req, res) => {
   }
 });
 
+// Cree une nouvelle position liee a l'utilisateur connecte.
 app.post('/positions', verifyToken, async (req, res) => {
   try {
     const nom = req.body.nom?.trim();
@@ -127,6 +133,7 @@ app.post('/positions', verifyToken, async (req, res) => {
   }
 });
 
+// Met a jour uniquement les champs recus pour une position.
 app.patch('/positions/:id', verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -171,6 +178,7 @@ app.patch('/positions/:id', verifyToken, async (req, res) => {
   }
 });
 
+// Supprime une position si son identifiant existe.
 app.delete('/positions/:id', verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -191,6 +199,7 @@ app.delete('/positions/:id', verifyToken, async (req, res) => {
   }
 });
 
+// Demarre le service apres connexion reussie a MongoDB.
 async function startServer() {
   try {
     const mongoUri = process.env.POSITIONS_MONGO_URI;

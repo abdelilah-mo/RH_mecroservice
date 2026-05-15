@@ -21,6 +21,7 @@ const app = express();
 
 app.use(express.json());
 
+// Autorise les appels du front et les headers utiles entre services.
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -66,6 +67,7 @@ const affectationSchema = new mongoose.Schema(
 
 const Affectation = mongoose.model('Affectation', affectationSchema);
 
+// Verifie le JWT puis attache l'utilisateur connecte a la requete.
 function verifyToken(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
 
@@ -83,10 +85,12 @@ function verifyToken(req, res, next) {
   }
 }
 
+// Verifie qu'un identifiant respecte le format MongoDB.
 function validateObjectId(id) {
   return mongoose.Types.ObjectId.isValid(id);
 }
 
+// Nettoie les champs recus avant creation ou mise a jour d'une affectation.
 function normalizeAffectationPayload(body) {
   return {
     employeeId: body.employeeId?.trim(),
@@ -97,6 +101,7 @@ function normalizeAffectationPayload(body) {
   };
 }
 
+// Retourne toutes les affectations du plus recent au plus ancien.
 app.get('/affectations', verifyToken, async (req, res) => {
   try {
     const affectations = await Affectation.find().sort({ createdAt: -1 });
@@ -106,6 +111,7 @@ app.get('/affectations', verifyToken, async (req, res) => {
   }
 });
 
+// Retourne une affectation precise a partir de son identifiant.
 app.get('/affectations/:id', verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -126,6 +132,7 @@ app.get('/affectations/:id', verifyToken, async (req, res) => {
   }
 });
 
+// Cree une nouvelle affectation entre un employe et un catalogue.
 app.post('/affectations', verifyToken, async (req, res) => {
   try {
     const payload = normalizeAffectationPayload(req.body);
@@ -148,6 +155,7 @@ app.post('/affectations', verifyToken, async (req, res) => {
   }
 });
 
+// Met a jour uniquement les champs recus pour une affectation.
 app.patch('/affectations/:id', verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -187,6 +195,7 @@ app.patch('/affectations/:id', verifyToken, async (req, res) => {
   }
 });
 
+// Supprime une affectation si son identifiant existe.
 app.delete('/affectations/:id', verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -207,6 +216,7 @@ app.delete('/affectations/:id', verifyToken, async (req, res) => {
   }
 });
 
+// Demarre le service apres connexion reussie a MongoDB.
 async function startServer() {
   try {
     const mongoUri = process.env.AFFECTATIONS_MONGO_URI;

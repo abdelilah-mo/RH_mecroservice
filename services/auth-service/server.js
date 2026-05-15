@@ -18,6 +18,7 @@ const app = express();
 
 app.use(express.json());
 
+// Autorise les appels du front et les headers utiles entre services.
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -53,10 +54,12 @@ const userSchema = new mongoose.Schema(
 
 const User = mongoose.model('User', userSchema);
 
+// Construit un username simple a partir de la partie locale de l'email.
 function buildUsernameFromEmail(email) {
   return email.split('@')[0].replace(/[^a-zA-Z0-9_-]/g, '') || 'user';
 }
 
+// Cherche un username libre en ajoutant un numero si le nom existe deja.
 async function generateUniqueUsername(baseUsername, excludeUserId = null) {
   const normalizedBase = baseUsername.trim();
   let candidate = normalizedBase;
@@ -74,6 +77,7 @@ async function generateUniqueUsername(baseUsername, excludeUserId = null) {
   }
 }
 
+// Cree un utilisateur apres validation des champs et verification des doublons.
 app.post('/auth/register', async (req, res) => {
   try {
     const username = req.body.username?.trim();
@@ -119,6 +123,7 @@ app.post('/auth/register', async (req, res) => {
   }
 });
 
+// Verifie les identifiants et renvoie un token JWT pour la session.
 app.post('/auth/login', async (req, res) => {
   try {
     const email = req.body.email?.trim().toLowerCase();
@@ -166,6 +171,7 @@ app.post('/auth/login', async (req, res) => {
 });
 
 
+// Demarre le service apres connexion reussie a MongoDB.
 async function startServer() {
   try {
     const mongoUri = process.env.AUTH_MONGO_URI ;
