@@ -7,15 +7,19 @@
 //   POST http://localhost:3001/auth/login
 // =======================================================================
 
+// Charge les variables d'environnement communes (.env a la racine).
 require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 
+// Dependances principales du service (API, securite, base de donnees).
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 
+// Instance Express qui porte l'API d'authentification.
 const app = express();
 
+// Permet de lire le JSON des requetes entrantes.
 app.use(express.json());
 
 // Autorise les appels du front et les headers utiles entre services.
@@ -26,6 +30,7 @@ app.use((req, res, next) => {
   next();
 });
 
+// Schema MongoDB qui decrit la structure d'un utilisateur.
 const userSchema = new mongoose.Schema(
   {
     username: {
@@ -52,6 +57,7 @@ const userSchema = new mongoose.Schema(
   }
 );
 
+// Modele Mongoose pour acceder a la collection des utilisateurs.
 const User = mongoose.model('User', userSchema);
 
 // Construit un username simple a partir de la partie locale de l'email.
@@ -77,6 +83,7 @@ async function generateUniqueUsername(baseUsername, excludeUserId = null) {
   }
 }
 
+// ---- ROUTES: AUTHENTIFICATION ----
 // Cree un utilisateur apres validation des champs et verification des doublons.
 app.post('/auth/register', async (req, res) => {
   try {

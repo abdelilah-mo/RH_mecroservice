@@ -11,14 +11,18 @@
 //   DELETE http://localhost:3008/reclamations/:id
 // =======================================================================
 
+// Charge les variables d'environnement communes (.env a la racine).
 require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 
+// Dependances principales du service (API, securite, base de donnees).
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 
+// Instance Express qui porte l'API reclamations.
 const app = express();
 
+// Permet de lire le JSON des requetes entrantes.
 app.use(express.json());
 
 // Autorise les appels du front et les headers utiles entre services.
@@ -29,6 +33,7 @@ app.use((req, res, next) => {
   next();
 });
 
+// Schema MongoDB qui decrit la structure d'une reclamation.
 const reclamationSchema = new mongoose.Schema(
   {
     sujet: {
@@ -62,6 +67,7 @@ const reclamationSchema = new mongoose.Schema(
   }
 );
 
+// Modele Mongoose pour acceder a la collection des reclamations.
 const Reclamation = mongoose.model('Reclamation', reclamationSchema);
 
 // Verifie le JWT puis attache l'utilisateur connecte a la requete.
@@ -97,6 +103,7 @@ function normalizeReclamationPayload(body) {
   };
 }
 
+// ---- ROUTES: LECTURE ----
 // Retourne toutes les reclamations du plus recent au plus ancien.
 app.get('/reclamations', verifyToken, async (req, res) => {
   try {
@@ -128,6 +135,7 @@ app.get('/reclamations/:id', verifyToken, async (req, res) => {
   }
 });
 
+// ---- ROUTES: CREATION ----
 // Cree une nouvelle reclamation liee a l'utilisateur connecte.
 app.post('/reclamations', verifyToken, async (req, res) => {
   try {
@@ -151,6 +159,7 @@ app.post('/reclamations', verifyToken, async (req, res) => {
   }
 });
 
+// ---- ROUTES: MISE A JOUR ----
 // Met a jour uniquement les champs recus pour une reclamation.
 app.patch('/reclamations/:id', verifyToken, async (req, res) => {
   try {
@@ -189,6 +198,7 @@ app.patch('/reclamations/:id', verifyToken, async (req, res) => {
   }
 });
 
+// ---- ROUTES: SUPPRESSION ----
 // Supprime une reclamation si son identifiant existe.
 app.delete('/reclamations/:id', verifyToken, async (req, res) => {
   try {

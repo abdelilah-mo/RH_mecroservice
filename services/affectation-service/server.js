@@ -11,14 +11,18 @@
 //   DELETE http://localhost:3007/affectations/:id
 // =======================================================================
 
+// Charge les variables d'environnement communes (.env a la racine).
 require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 
+// Dependances principales du service (API, securite, base de donnees).
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 
+// Instance Express qui porte l'API affectations.
 const app = express();
 
+// Permet de lire le JSON des requetes entrantes.
 app.use(express.json());
 
 // Autorise les appels du front et les headers utiles entre services.
@@ -29,6 +33,7 @@ app.use((req, res, next) => {
   next();
 });
 
+// Schema MongoDB qui decrit la structure d'une affectation.
 const affectationSchema = new mongoose.Schema(
   {
     employeeId: {
@@ -65,6 +70,7 @@ const affectationSchema = new mongoose.Schema(
   }
 );
 
+// Modele Mongoose pour acceder a la collection des affectations.
 const Affectation = mongoose.model('Affectation', affectationSchema);
 
 // Verifie le JWT puis attache l'utilisateur connecte a la requete.
@@ -101,6 +107,7 @@ function normalizeAffectationPayload(body) {
   };
 }
 
+// ---- ROUTES: LECTURE ----
 // Retourne toutes les affectations du plus recent au plus ancien.
 app.get('/affectations', verifyToken, async (req, res) => {
   try {
@@ -132,6 +139,7 @@ app.get('/affectations/:id', verifyToken, async (req, res) => {
   }
 });
 
+// ---- ROUTES: CREATION ----
 // Cree une nouvelle affectation entre un employe et un catalogue.
 app.post('/affectations', verifyToken, async (req, res) => {
   try {
@@ -155,6 +163,7 @@ app.post('/affectations', verifyToken, async (req, res) => {
   }
 });
 
+// ---- ROUTES: MISE A JOUR ----
 // Met a jour uniquement les champs recus pour une affectation.
 app.patch('/affectations/:id', verifyToken, async (req, res) => {
   try {
@@ -195,6 +204,7 @@ app.patch('/affectations/:id', verifyToken, async (req, res) => {
   }
 });
 
+// ---- ROUTES: SUPPRESSION ----
 // Supprime une affectation si son identifiant existe.
 app.delete('/affectations/:id', verifyToken, async (req, res) => {
   try {

@@ -11,14 +11,18 @@
 //   DELETE http://localhost:3004/positions/:id
 // =======================================================================
 
+// Charge les variables d'environnement communes (.env a la racine).
 require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 
+// Dependances principales du service (API, securite, base de donnees).
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 
+// Instance Express qui porte l'API positions.
 const app = express();
 
+// Permet de lire le JSON des requetes entrantes.
 app.use(express.json());
 
 // Autorise les appels du front et les headers utiles entre services.
@@ -29,6 +33,7 @@ app.use((req, res, next) => {
   next();
 });
 
+// Schema MongoDB qui decrit la structure d'une position.
 const positionSchema = new mongoose.Schema(
   {
     nom: {
@@ -52,6 +57,7 @@ const positionSchema = new mongoose.Schema(
   }
 );
 
+// Modele Mongoose pour acceder a la collection des positions.
 const Position = mongoose.model('Position', positionSchema);
 
 // Verifie le JWT puis attache l'utilisateur connecte a la requete.
@@ -77,6 +83,7 @@ function validateObjectId(id) {
   return mongoose.Types.ObjectId.isValid(id);
 }
 
+// ---- ROUTES: LECTURE ----
 // Retourne toutes les positions du plus recent au plus ancien.
 app.get('/positions', verifyToken, async (req, res) => {
   try {
@@ -108,6 +115,7 @@ app.get('/positions/:id', verifyToken, async (req, res) => {
   }
 });
 
+// ---- ROUTES: CREATION ----
 // Cree une nouvelle position liee a l'utilisateur connecte.
 app.post('/positions', verifyToken, async (req, res) => {
   try {
@@ -133,6 +141,7 @@ app.post('/positions', verifyToken, async (req, res) => {
   }
 });
 
+// ---- ROUTES: MISE A JOUR ----
 // Met a jour uniquement les champs recus pour une position.
 app.patch('/positions/:id', verifyToken, async (req, res) => {
   try {
@@ -178,6 +187,7 @@ app.patch('/positions/:id', verifyToken, async (req, res) => {
   }
 });
 
+// ---- ROUTES: SUPPRESSION ----
 // Supprime une position si son identifiant existe.
 app.delete('/positions/:id', verifyToken, async (req, res) => {
   try {

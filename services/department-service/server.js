@@ -11,14 +11,18 @@
 //   DELETE http://localhost:3003/departments/:id
 // =======================================================================
 
+// Charge les variables d'environnement communes (.env a la racine).
 require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 
+// Dependances principales du service (API, securite, base de donnees).
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 
+// Instance Express qui porte l'API departments.
 const app = express();
 
+// Permet de lire le JSON des requetes entrantes.
 app.use(express.json());
 
 // Autorise les appels du front et les headers utiles entre services.
@@ -29,6 +33,7 @@ app.use((req, res, next) => {
   next();
 });
 
+// Schema MongoDB qui decrit la structure d'un departement.
 const departmentSchema = new mongoose.Schema(
   {
     nom: {
@@ -52,6 +57,7 @@ const departmentSchema = new mongoose.Schema(
   }
 );
 
+// Modele Mongoose pour acceder a la collection des departements.
 const Department = mongoose.model('Department', departmentSchema);
 
 // Verifie le JWT puis attache l'utilisateur connecte a la requete.
@@ -77,6 +83,7 @@ function validateObjectId(id) {
   return mongoose.Types.ObjectId.isValid(id);
 }
 
+// ---- ROUTES: LECTURE ----
 // Retourne tous les departements du plus recent au plus ancien.
 app.get('/departments', verifyToken, async (req, res) => {
   try {
@@ -108,6 +115,7 @@ app.get('/departments/:id', verifyToken, async (req, res) => {
   }
 });
 
+// ---- ROUTES: CREATION ----
 // Cree un nouveau departement lie a l'utilisateur connecte.
 app.post('/departments', verifyToken, async (req, res) => {
   try {
@@ -133,6 +141,7 @@ app.post('/departments', verifyToken, async (req, res) => {
   }
 });
 
+// ---- ROUTES: MISE A JOUR ----
 // Met a jour uniquement les champs recus pour un departement.
 app.patch('/departments/:id', verifyToken, async (req, res) => {
   try {
@@ -178,6 +187,7 @@ app.patch('/departments/:id', verifyToken, async (req, res) => {
   }
 });
 
+// ---- ROUTES: SUPPRESSION ----
 // Supprime un departement si son identifiant existe.
 app.delete('/departments/:id', verifyToken, async (req, res) => {
   try {

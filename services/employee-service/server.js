@@ -11,14 +11,18 @@
 //   DELETE http://localhost:3005/employees/:id
 // =======================================================================
 
+// Charge les variables d'environnement communes (.env a la racine).
 require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 
+// Dependances principales du service (API, securite, base de donnees).
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 
+// Instance Express qui porte l'API employees.
 const app = express();
 
+// Permet de lire le JSON des requetes entrantes.
 app.use(express.json());
 
 // Autorise les appels du front et les headers utiles entre services.
@@ -29,6 +33,7 @@ app.use((req, res, next) => {
   next();
 });
 
+// Schema MongoDB qui decrit la structure d'un employe.
 const employeeSchema = new mongoose.Schema(
   {
     nom: {
@@ -71,6 +76,7 @@ const employeeSchema = new mongoose.Schema(
   }
 );
 
+// Modele Mongoose pour acceder a la collection des employes.
 const Employee = mongoose.model('Employee', employeeSchema);
 
 // Verifie le JWT puis attache l'utilisateur connecte a la requete.
@@ -108,6 +114,7 @@ function normalizeEmployeePayload(body) {
   };
 }
 
+// ---- ROUTES: LECTURE ----
 // Retourne tous les employes du plus recent au plus ancien.
 app.get('/employees', verifyToken, async (req, res) => {
   try {
@@ -139,6 +146,7 @@ app.get('/employees/:id', verifyToken, async (req, res) => {
   }
 });
 
+// ---- ROUTES: CREATION ----
 // Cree un nouvel employe avec ses references departement et position.
 app.post('/employees', verifyToken, async (req, res) => {
   try {
@@ -162,6 +170,7 @@ app.post('/employees', verifyToken, async (req, res) => {
   }
 });
 
+// ---- ROUTES: MISE A JOUR ----
 // Met a jour uniquement les champs recus pour un employe.
 app.patch('/employees/:id', verifyToken, async (req, res) => {
   try {
@@ -203,6 +212,7 @@ app.patch('/employees/:id', verifyToken, async (req, res) => {
   }
 });
 
+// ---- ROUTES: SUPPRESSION ----
 // Supprime un employe si son identifiant existe.
 app.delete('/employees/:id', verifyToken, async (req, res) => {
   try {
