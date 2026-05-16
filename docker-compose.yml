@@ -1,0 +1,102 @@
+services:
+  mongo:
+    image: mongo:7.0
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: services/auth-service/Dockerfile
+    depends_on:
+      - mongo
+    ports:
+      - "3001:3001"
+    env_file:
+      - .env
+    volumes:
+      - ./.env:/app/.env:ro
+
+  department-service:
+    build:
+      context: .
+      dockerfile: services/department-service/Dockerfile
+    depends_on:
+      - mongo
+    ports:
+      - "3003:3003"
+    env_file:
+      - .env
+    volumes:
+      - ./.env:/app/.env:ro
+
+  position-service:
+    build:
+      context: .
+      dockerfile: services/position-service/Dockerfile
+    depends_on:
+      - mongo
+    ports:
+      - "3004:3004"
+    env_file:
+      - .env
+    volumes:
+      - ./.env:/app/.env:ro
+
+  employee-service:
+    build:
+      context: .
+      dockerfile: services/employee-service/Dockerfile
+    depends_on:
+      - mongo
+    ports:
+      - "3005:3005"
+    env_file:
+      - .env
+    volumes:
+      - ./.env:/app/.env:ro
+
+  catalogue-service:
+    build:
+      context: .
+      dockerfile: services/catalogue-service/Dockerfile
+    depends_on:
+      - mongo
+    ports:
+      - "3006:3006"
+    env_file:
+      - .env
+    volumes:
+      - ./.env:/app/.env:ro
+
+  affectation-service:
+    build:
+      context: .
+      dockerfile: services/affectation-service/Dockerfile
+    depends_on:
+      - mongo
+    ports:
+      - "3007:3007"
+    env_file:
+      - .env
+    volumes:
+      - ./.env:/app/.env:ro
+
+  reclamation-service:
+    build:
+      context: .
+      dockerfile: services/reclamation-service/Dockerfile
+    depends_on:
+      - mongo
+    ports:
+      - "3008:3008"
+    env_file:
+      - .env
+    volumes:
+      - ./.env:/app/.env:ro
+
+volumes:
+  mongo_data:
