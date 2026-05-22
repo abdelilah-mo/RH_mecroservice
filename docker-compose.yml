@@ -7,6 +7,17 @@ services:
     volumes:
       - mongo_data:/data/db
 
+  frontend-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    volumes:
+      - ./.env:/app/.env:ro
+
   auth-service:
     build:
       context: .
