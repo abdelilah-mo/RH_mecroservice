@@ -1,12 +1,4 @@
 services:
-  mongo:
-    image: mongo:7.0
-    restart: unless-stopped
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-
   frontend-gateway:
     build:
       context: .
@@ -18,12 +10,18 @@ services:
     volumes:
       - ./.env:/app/.env:ro
 
+  mongo-auth:
+    image: mongo:7.0
+    restart: unless-stopped
+    volumes:
+      - mongo_auth_data:/data/db
+
   auth-service:
     build:
       context: .
       dockerfile: services/auth-service/Dockerfile
     depends_on:
-      - mongo
+      - mongo-auth
     ports:
       - "3001:3001"
     env_file:
@@ -31,12 +29,18 @@ services:
     volumes:
       - ./.env:/app/.env:ro
 
+  mongo-department:
+    image: mongo:7.0
+    restart: unless-stopped
+    volumes:
+      - mongo_department_data:/data/db
+
   department-service:
     build:
       context: .
       dockerfile: services/department-service/Dockerfile
     depends_on:
-      - mongo
+      - mongo-department
     ports:
       - "3003:3003"
     env_file:
@@ -44,12 +48,18 @@ services:
     volumes:
       - ./.env:/app/.env:ro
 
+  mongo-position:
+    image: mongo:7.0
+    restart: unless-stopped
+    volumes:
+      - mongo_position_data:/data/db
+
   position-service:
     build:
       context: .
       dockerfile: services/position-service/Dockerfile
     depends_on:
-      - mongo
+      - mongo-position
     ports:
       - "3004:3004"
     env_file:
@@ -57,12 +67,18 @@ services:
     volumes:
       - ./.env:/app/.env:ro
 
+  mongo-employee:
+    image: mongo:7.0
+    restart: unless-stopped
+    volumes:
+      - mongo_employee_data:/data/db
+
   employee-service:
     build:
       context: .
       dockerfile: services/employee-service/Dockerfile
     depends_on:
-      - mongo
+      - mongo-employee
     ports:
       - "3005:3005"
     env_file:
@@ -70,12 +86,18 @@ services:
     volumes:
       - ./.env:/app/.env:ro
 
+  mongo-catalogue:
+    image: mongo:7.0
+    restart: unless-stopped
+    volumes:
+      - mongo_catalogue_data:/data/db
+
   catalogue-service:
     build:
       context: .
       dockerfile: services/catalogue-service/Dockerfile
     depends_on:
-      - mongo
+      - mongo-catalogue
     ports:
       - "3006:3006"
     env_file:
@@ -83,12 +105,18 @@ services:
     volumes:
       - ./.env:/app/.env:ro
 
+  mongo-affectation:
+    image: mongo:7.0
+    restart: unless-stopped
+    volumes:
+      - mongo_affectation_data:/data/db
+
   affectation-service:
     build:
       context: .
       dockerfile: services/affectation-service/Dockerfile
     depends_on:
-      - mongo
+      - mongo-affectation
     ports:
       - "3007:3007"
     env_file:
@@ -96,12 +124,18 @@ services:
     volumes:
       - ./.env:/app/.env:ro
 
+  mongo-reclamation:
+    image: mongo:7.0
+    restart: unless-stopped
+    volumes:
+      - mongo_reclamation_data:/data/db
+
   reclamation-service:
     build:
       context: .
       dockerfile: services/reclamation-service/Dockerfile
     depends_on:
-      - mongo
+      - mongo-reclamation
     ports:
       - "3008:3008"
     env_file:
@@ -110,4 +144,10 @@ services:
       - ./.env:/app/.env:ro
 
 volumes:
-  mongo_data:
+  mongo_auth_data:
+  mongo_department_data:
+  mongo_position_data:
+  mongo_employee_data:
+  mongo_catalogue_data:
+  mongo_affectation_data:
+  mongo_reclamation_data:
